@@ -1,95 +1,42 @@
-import keras
+import os
 import cv2
-import matplotlib
-import numpy as np
-import time
-from model.yolo_model import YOLO
+img_width = 640
+img_height = 3600
 
-def process_image(img):
-    """Resize, reduce and expand image.
+def prep_small_images():
+   myimages = os.path.join(os.getcwd(),"rgb")
+   print(myimages)
+   for img in os.listdir(myimages):
+      image_path = cv2.imread(os.path.join(myimages,img))
+      image_path = cv2.resize(image_path,(img_height,img_width))
+      print(image_path.shape)
+      cv2.imwrite(os.path.join(os.getcwd(),"small_images",img),
+                  image_path)
 
-    # Argument:
-        img: original image.
-
-    # Returns
-        image: ndarray(64, 64, 3), processed image.
-    """
-    image = cv2.resize(img, (416, 416),
-                       interpolation=cv2.INTER_CUBIC)
-    image = np.array(image, dtype='float32')
-    image /= 255.
-    image = np.expand_dims(image, axis=0)
-
-    return image
-
-def get_classes(file):
-    """Get classes name.
-
-    # Argument:
-        file: classes name for database.
-
-    # Returns
-        class_names: List, classes name.
-
-    """
-    with open(file) as f:
-        class_names = f.readlines()
-    class_names = [c.strip() for c in class_names]
-
-    return class_names
-    
-def draw(image, boxes, scores, classes, all_classes):
-    """Draw the boxes on the image.
-
-    # Argument:
-        image: original image.
-        boxes: ndarray, boxes of objects.
-        classes: ndarray, classes of objects.
-        scores: ndarray, scores of objects.
-        all_classes: all classes name.
-    """
-    for box, score, cl in zip(boxes, scores, classes):
-        x, y, w, h = box
-
-        top = max(0, np.floor(x + 0.5).astype(int))
-        left = max(0, np.floor(y + 0.5).astype(int))
-        right = min(image.shape[1], np.floor(x + w + 0.5).astype(int))
-        bottom = min(image.shape[0], np.floor(y + h + 0.5).astype(int))
-
-        cv2.rectangle(image, (top, left), (right, bottom), (255, 0, 0), 2)
-        cv2.putText(image, '{0} {1:.2f}'.format(all_classes[cl], score),
-                    (top, left - 6),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6, (0, 0, 255), 1,
-                    cv2.LINE_AA)
-
-        print('class: {0}, score: {1:.2f}'.format(all_classes[cl], score))
-        print('box coordinate x,y,w,h: {0}'.format(box))
-
-    print()
-
-def detect_image(image, yolo, all_classes):
-    """Use yolo v3 to detect images.
-
-    # Argument:
-        image: original image.
-        yolo: YOLO, yolo model.
-        all_classes: all classes name.
-
-    # Returns:
-        image: processed image.
-    """
-    pimage = process_image(image)
-
-    start = time.time()
-    boxes, classes, scores = yolo.predict(pimage, image.shape)
-    end = time.time()
-
-    print('time: {0:.2f}s'.format(end - start))
-
-    if boxes is not None:
-        draw(image, boxes, scores, classes, all_classes)
-
-    return image
-
-#some stuff
+def prep_train_txt():
+   width = 624
+   height = 832
+   small_images = os.path.join(os.getcwd(),”small_images”)
+   file_object = open(‘train.txt’, ‘a’)
+   for img in os.listdir(small_images):
+      if img[-3:] == ‘txt’:
+         with open(os.path.join(small_images,img)) as f:
+            lines = f.readlines()
+            ans = lines[0]
+            line = ans.split(“ “)
+            x1 , y1 , w , h = float(line[1]) , 
+                              float(line[2]) ,      
+                              float(line[3]) , 
+                              float(line[4][:-1])
+            x1 , y1 , w , h = x1 — w/2 , y1-h/2 , w , h
+            x1 , y1 , w , h = int(x1*width) , 
+                             int(y1*height) ,  
+                             int(w*width) , 
+                             int(h*height)
+            nameee = img[:-3] + “jpg”
+            img_name = os.path.join(“small_images” , nameee)
+            img_name = cv2.imread(img_name)
+            text = “small_images/” + nameee + “ “ + str(x1) + 
+                  “,” +  str(y1) + “,” + str(x1+w) + “,” + 
+                  str(y1+h) + “,” + str(0) + “\n”
+            file_object.write(text)
